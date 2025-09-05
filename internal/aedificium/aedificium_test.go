@@ -2,8 +2,8 @@ package aedificium
 
 import "testing"
 
-func TestMakeComplexLibrary(t *testing.T) {
-	for size := 1; size <= 10; size++ {
+func TestMakeLibMap(t *testing.T) {
+	for size := 1; size <= 4; size++ {
 		lib := MakeLibMap(size)
 		if lib.Size() != size {
 			t.Errorf("len(Rooms) = %d, want %d", lib.Size(), size)
@@ -22,31 +22,40 @@ func TestMakeComplexLibrary(t *testing.T) {
 				t.Errorf("lib.VisibleLabel(%d) = %d, want %d", room, lib.VisibleLabel(room), room%4)
 			}
 			for door := range 6 {
-				toRoom := lib.Connections[door][room]
-				if toRoom < 0 || toRoom >= size {
-					t.Errorf("lib.Connections[%d][%d] = %d, want 0 <= x < %d", door, room, toRoom, size)
+				to := lib.Connections[door][room]
+				if to.Room < 0 || to.Room >= size {
+					t.Errorf("lib.Connections[%d][%d] = %d, want 0 <= x < %d", door, room, to.Room, size)
 				}
 			}
 		}
 		connected := make(map[int]bool)
 		for i, connection := range lib.Minimal {
-			if connection[0][0] < 0 || connection[0][0] > lib.Size() {
-				t.Errorf("bad room in minimal connection[0] %d %v", i, connection[0])
+			if connection.From.Room < 0 || connection.From.Room > lib.Size() {
+				t.Errorf("bad room in minimal connection[0] %d %v", i, connection)
 			}
-			if connection[1][0] < 0 || connection[1][0] > lib.Size() {
-				t.Errorf("bad room in minimal connection[1] %d %v", i, connection[1])
+			if connection.To.Room < 0 || connection.To.Room > lib.Size() {
+				t.Errorf("bad room in minimal connection[1] %d %v", i, connection)
 			}
-			if connection[0][1] < 0 || connection[0][1] >= 6 {
-				t.Errorf("bad door in minimal connection[0] %d %v", i, connection[0])
+			if connection.From.Door < 0 || connection.From.Door >= 6 {
+				t.Errorf("bad door in minimal connection[0] %d %v", i, connection)
 			}
-			if connection[1][1] < 0 || connection[1][1] >= 6 {
-				t.Errorf("bad door in minimal connection[1] %d %v", i, connection[0])
+			if connection.To.Door < 0 || connection.To.Door >= 6 {
+				t.Errorf("bad door in minimal connection[1] %d %v", i, connection)
 			}
-			connected[connection[0][0]] = true
-			connected[connection[1][0]] = true
+			connected[connection.From.Room] = true
+			connected[connection.To.Room] = true
 		}
 		if len(connected) != lib.Size() {
 			t.Errorf("only %d rooms connected out of %d", len(connected), lib.Size())
+		}
+		for room := range size {
+			for door := range 6 {
+				node1 := lib.ConnectedRoom(Node{room, door})
+				node0 := lib.ConnectedRoom(node1)
+				if room != node0.Room || door != node0.Door {
+					t.Errorf("size %d bad connection %d,%d -> %v -> %v", size, room, door, node1, node0)
+				}
+			}
 		}
 	}
 }

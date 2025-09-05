@@ -1,15 +1,22 @@
 package aedificium
 
-type DoorId [2]int // room index [room], door [0-5]
-
-func (d DoorId) Key(size int) int {
-	return size*d[0] + d[1]
+// A Node is a specific room and door.
+type Node struct {
+	Room int
+	Door int
 }
 
-type Connection [2]DoorId // from, to
+func (n Node) Key(size int) int {
+	return size*n.Door + n.Room
+}
 
-func (c Connection) Key(size int) int {
-	return size*size*c[0].Key(size) + c[1].Key(size)
+type Edge struct {
+	From Node
+	To   Node
+}
+
+func (e Edge) Key(size int) int {
+	return size*size*e.From.Key(size) + e.To.Key(size)
 }
 
 // A Library is a collection of rooms connected by doors.
@@ -17,10 +24,10 @@ func (c Connection) Key(size int) int {
 // A full map contains the information for all rooms.  A minimal map contains
 // just enough connections to navigate the library.
 type LibMap struct {
-	Labels       []int        // Room labels indexed by room index [room].
-	Connections  [6][]int     // Connections index by door (0-5), and room.
-	StartingRoom int          // What room did we build the library from?
-	Minimal      []Connection // Minimal connections to navigate the library.
+	Labels       []int     // Room labels indexed by room index [room].
+	Connections  [6][]Node // Connections index by door (0-5), and room.
+	StartingRoom int       // What room did we build the library from?
+	Minimal      []Edge    // Minimal connections to navigate the library.
 }
 
 func (lm *LibMap) Size() int {
@@ -35,25 +42,20 @@ func (lm *LibMap) VisibleLabel(room int) int {
 	return lm.Labels[room] % 4
 }
 
-func (lm *LibMap) Connect(fromRoom, fromDoor, toRoom, toDoor int) {
-	lm.Connections[fromDoor][fromRoom] = toRoom
-	lm.Connections[toDoor][toRoom] = fromRoom
+func (lm *LibMap) Connect(from, to Node) {
+	lm.Connections[from.Door][from.Room] = to
+	lm.Connections[to.Door][to.Room] = from
 }
 
-func (lm *LibMap) ConnectedRoom(fromRoom, fromDoor int) (int, int) {
-	toRoom := lm.Connections[fromDoor][fromRoom]
-	for d := range 6 {
-		if lm.Connections[d][toRoom] == fromRoom {
-			return toRoom, d
-		}
-	}
-	return -1, -1
+func (lm *LibMap) ConnectedRoom(from Node) Node {
+	return lm.Connections[from.Door][from.Room]
 }
 
+// Returns the rooms the doors connect to.
 func (lm *LibMap) Doors(room int) [6]int {
 	var doors [6]int
 	for d := range 6 {
-		doors[d] = lm.Connections[d][room]
+		doors[d] = lm.Connections[d][room].Room
 	}
 	return doors
 }
@@ -61,7 +63,7 @@ func (lm *LibMap) Doors(room int) [6]int {
 func (lm *LibMap) Id(room int) int {
 	var id = lm.Labels[room] % 4
 	for d := range 6 {
-		id = (id << 2) | (lm.Connections[d][room] % 4)
+		id = (id << 2) | (lm.Connections[d][room].Room % 4)
 	}
 	return id
 }
@@ -69,14 +71,14 @@ func (lm *LibMap) Id(room int) int {
 func MakeEmptyLibMap(size int) LibMap {
 	return LibMap{
 		Labels: make([]int, size),
-		Connections: [6][]int{
-			make([]int, size),
-			make([]int, size),
-			make([]int, size),
-			make([]int, size),
-			make([]int, size),
-			make([]int, size),
+		Connections: [6][]Node{
+			make([]Node, size),
+			make([]Node, size),
+			make([]Node, size),
+			make([]Node, size),
+			make([]Node, size),
+			make([]Node, size),
 		},
-		Minimal: []Connection{},
+		Minimal: []Edge{},
 	}
 }

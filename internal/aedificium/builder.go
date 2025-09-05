@@ -69,7 +69,7 @@ func (b *Builder) UseDoor(room, door int) {
 	}
 }
 
-func (b *Builder) RandomUnusedDoorId() DoorId {
+func (b *Builder) RandomUnusedNode() Node {
 	for {
 		room := rand.Intn(b.Size)
 		if len(b.UsedDoors[room]) == 6 {
@@ -78,7 +78,7 @@ func (b *Builder) RandomUnusedDoorId() DoorId {
 		// Just pick the first...
 		for door := range 6 {
 			if !b.IsDoorUsed(room, door) {
-				return DoorId{room, door}
+				return Node{Room: room, Door: door}
 			}
 		}
 	}
@@ -97,7 +97,7 @@ func (b *Builder) Build(size int) LibMap {
 	for i := range size {
 		lib.Labels[i] = i
 		for d := range 6 {
-			lib.Connections[d][i] = i
+			lib.Connections[d][i] = Node{Room: i, Door: d}
 		}
 	}
 	// At this point we have a legal map with all rooms isolated.
@@ -112,11 +112,11 @@ func (b *Builder) Build(size int) LibMap {
 		//fmt.Printf("from %d doors %v\n", from, b.UsedDoors[from])
 		fromDoor := b.UnusedDoor(from)
 		toDoor := b.UnusedDoor(to)
-		lib.Connect(from, fromDoor, to, toDoor)
+		lib.Connect(Node{Room: from, Door: fromDoor}, Node{Room: to, Door: toDoor})
 		b.AddConnected(to)
 		b.UseDoor(from, fromDoor)
 		b.UseDoor(to, toDoor)
-		connection := Connection{DoorId{from, fromDoor}, DoorId{to, toDoor}}
+		connection := Edge{Node{from, fromDoor}, Node{to, toDoor}}
 		lib.Minimal = append(lib.Minimal, connection)
 	}
 	// Randomize connections.
@@ -126,10 +126,12 @@ func (b *Builder) Build(size int) LibMap {
 				continue
 			}
 			// This door is unused.
-			toId := b.RandomUnusedDoorId()
-			lib.Connect(from, fromDoor, toId[0], toId[1])
+			// Pick a random room/door.  It may be the same room or same room
+			// and door.
+			to := b.RandomUnusedNode()
+			lib.Connect(Node{Room: from, Door: fromDoor}, to)
 			b.UseDoor(from, fromDoor)
-			b.UseDoor(toId[0], toId[1])
+			b.UseDoor(to.Room, to.Door)
 			if len(b.UsedDoors[from]) == 6 {
 				break
 			}
