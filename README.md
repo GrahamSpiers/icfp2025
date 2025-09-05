@@ -39,6 +39,8 @@ id: <grahamsspiers@gmail.com> ffrbCqDWn7ARkZ9pR26Frg
     {"results":[[0,0],[0,0],[0,0]],"queryCount":4}
     ```
 
+Note that the above `plans` is 3 plans of length 1.  There are 3 results.
+
 - Come up with strategies
         Fill in *Strategies*.
 - What do we need?

@@ -1,55 +1,82 @@
 package aedificium
 
-import "math/rand"
+type DoorId [2]int // room index [room], door [0-5]
 
-// A Room has a label and 6 doors.
-type Room struct {
-	// Each room has a label 0-3.
-	Label int
-	// Each room has 6 doors which each lead to another room or the same room.
-	Doors [6]int
+func (d DoorId) Key(size int) int {
+	return size*d[0] + d[1]
 }
 
-// What is the visible label of this room?
-func (r Room) Bits() int {
-	return r.Label % 4
+type Connection [2]DoorId // from, to
+
+func (c Connection) Key(size int) int {
+	return size*size*c[0].Key(size) + c[1].Key(size)
 }
 
-// A Library is a collection of connected rooms.
-type Library []Room
+// A Library is a collection of rooms connected by doors.
+// Each room has a label only part of which is visible.
+// A full map contains the information for all rooms.  A minimal map contains
+// just enough connections to navigate the library.
+type LibMap struct {
+	Labels       []int        // Room labels indexed by room index [room].
+	Connections  [6][]int     // Connections index by door (0-5), and room.
+	StartingRoom int          // What room did we build the library from?
+	Minimal      []Connection // Minimal connections to navigate the library.
+}
 
-// A Path is a sequence of door index choices.
-type Path []int
+func (lm *LibMap) Size() int {
+	return len(lm.Labels)
+}
 
-// A Result is a sequence of room labels.
-type Result []int
+func (lm *LibMap) Label(room int) int {
+	return lm.Labels[room]
+}
 
-// MakeSimpleLibrary creates a library of the given size with all doors
-// but one leading to room 0 the other door leads to the next room in the
-// sequence, wrapping around to room 0 from the last room.
-func MakeSimpleLibrary(size int) Library {
-	rooms := make([]Room, size)
-	for i := range rooms {
-		rooms[i].Label = i
-		for j := range rooms[i].Doors {
-			rooms[i].Doors[j] = 0
+func (lm *LibMap) VisibleLabel(room int) int {
+	return lm.Labels[room] % 4
+}
+
+func (lm *LibMap) Connect(fromRoom, fromDoor, toRoom, toDoor int) {
+	lm.Connections[fromDoor][fromRoom] = toRoom
+	lm.Connections[toDoor][toRoom] = fromRoom
+}
+
+func (lm *LibMap) ConnectedRoom(fromRoom, fromDoor int) (int, int) {
+	toRoom := lm.Connections[fromDoor][fromRoom]
+	for d := range 6 {
+		if lm.Connections[d][toRoom] == fromRoom {
+			return toRoom, d
 		}
-		rooms[i].Doors[0] = (i + 1) % size
 	}
-	return rooms
+	return -1, -1
 }
 
-// MakeComplexLibrary creates a library of the given size with all doors
-// leading to random rooms.  It assigns a random path to all rooms.  Note
-// that there may be more that one path throught the complete library.
-func MakeComplexLibrary(size int) Library {
-	rooms := make([]Room, size)
-	for i := range rooms {
-		rooms[i].Label = i
-		for j := range rooms[i].Doors {
-			rooms[i].Doors[j] = rand.Intn(size)
-		}
-		rooms[i].Doors[rand.Intn(6)] = (i + 1) % size
+func (lm *LibMap) Doors(room int) [6]int {
+	var doors [6]int
+	for d := range 6 {
+		doors[d] = lm.Connections[d][room]
 	}
-	return rooms
+	return doors
+}
+
+func (lm *LibMap) Id(room int) int {
+	var id = lm.Labels[room] % 4
+	for d := range 6 {
+		id = (id << 2) | (lm.Connections[d][room] % 4)
+	}
+	return id
+}
+
+func MakeEmptyLibMap(size int) LibMap {
+	return LibMap{
+		Labels: make([]int, size),
+		Connections: [6][]int{
+			make([]int, size),
+			make([]int, size),
+			make([]int, size),
+			make([]int, size),
+			make([]int, size),
+			make([]int, size),
+		},
+		Minimal: []Connection{},
+	}
 }
