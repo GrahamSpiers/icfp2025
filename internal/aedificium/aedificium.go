@@ -42,6 +42,25 @@ func (lm *LibMap) VisibleLabel(room int) int {
 	return lm.Labels[room] % 4
 }
 
+func (lm *LibMap) VisibleLabels() []int {
+	labels := make([]int, lm.Size())
+	for room := range lm.Size() {
+		labels[room] = lm.VisibleLabel(room)
+	}
+	return labels
+}
+
+func (lm *LibMap) Edges() []Edge {
+	edges := []Edge{}
+	// uneeded - backwards added
+	for room := range lm.Size() {
+		for door := range 6 {
+			edges = append(edges, Edge{From: Node{room, door}, To: lm.Connections[room][door]})
+		}
+	}
+	return edges
+}
+
 func (lm *LibMap) Connect(from, to Node) {
 	lm.Connections[from.Door][from.Room] = to
 	lm.Connections[to.Door][to.Room] = from

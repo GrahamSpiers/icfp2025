@@ -2,12 +2,10 @@ package aedificium
 
 import "fmt"
 
-const Id = "grahamsspiers@gmail.com ffrbCqDWn7ARkZ9pR26Frg"
-
 type Server interface {
 	Select(problemName string) (string, error)
 	Explore(plans []string) ([][]int, int, error)
-	Guess() (bool, error)
+	Guess(labels []int, start int, edges []Edge) (bool, error)
 }
 
 type XServer struct {
@@ -39,7 +37,7 @@ func (xs *XServer) Explore(plans []string) ([][]int, int, error) {
 	return results, xs.QueryCount, nil
 }
 
-func (xs *XServer) Guess() (bool, error) {
+func (xs *XServer) Guess(labels []int, start int, edges []Edge) (bool, error) {
 	fmt.Printf("guess\n")
 	return true, nil
 }
@@ -96,7 +94,7 @@ func (solver *Solver) Solve() (bool, int, error) {
 		// map complete?
 		if len(solver.Info) == solver.Size {
 			//	guess
-			correct, err := solver.Server.Guess()
+			correct, err := solver.Server.Guess(solver.Labels(), 0, solver.Edges())
 			if err != nil {
 				return false, queryCount, fmt.Errorf("%s %d guess got %v", solver.ProblemName, solver.Size, err)
 			}
@@ -106,6 +104,28 @@ func (solver *Solver) Solve() (bool, int, error) {
 			return false, queryCount, fmt.Errorf("%s %d bad number of rooms %d", solver.ProblemName, solver.Size, len(solver.Info))
 		}
 	}
+}
+
+// Visible labels.
+func (solver *Solver) Labels() []int {
+	labels := make([]int, solver.Size)
+	for i, info := range solver.Info {
+		labels[i] = info.Label
+	}
+	return labels
+}
+
+func (solver *Solver) Edges() []Edge {
+	edges := []Edge{}
+	for room, info := range solver.Info {
+		for door := range 6 {
+			edges = append(edges, Edge{
+				From: Node{room, door},
+				To:   Node{},
+			})
+		}
+	}
+	return edges
 }
 
 func (solver *Solver) LearnAndPlan(results [][]int) {
