@@ -60,6 +60,42 @@ func (lm *LibMap) Doors(room int) [6]int {
 	return doors
 }
 
+func (lm *LibMap) Explore(plan string) []int {
+	runes := []rune(plan)
+	n := len(runes)
+	doors := make([]int, n)
+	for i := range n {
+		doors[i] = int(runes[i] - 48)
+	}
+	//fmt.Printf("%s %v %v\n", plan, runes, doors)
+	result := make([]int, n+1)
+	var room = 0
+	result[0] = 0
+	for i, door := range doors {
+		node := lm.Connections[door][room]
+		result[i+1] = lm.VisibleLabel(node.Room)
+		room = node.Room
+	}
+	return result
+}
+
+func (lm *LibMap) Has(visLabel int, doors []int) bool {
+	for room := range lm.Size() {
+		vis := lm.VisibleLabel(room)
+		if vis != visLabel {
+			continue
+		}
+		roomDoors := lm.Doors(room)
+		for i := range 6 {
+			if doors[i] != roomDoors[i] {
+				continue
+			}
+		}
+		return true
+	}
+	return false
+}
+
 func (lm *LibMap) Id(room int) int {
 	var id = lm.Labels[room] % 4
 	for d := range 6 {

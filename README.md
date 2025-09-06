@@ -24,6 +24,8 @@ $curl -X POST https://31pwr5t6ij.execute-api.eu-west-2.amazonaws.com/register -H
 
 id: <grahamsspiers@gmail.com> ffrbCqDWn7ARkZ9pR26Frg
 
+I asked to have USA changed to golang.
+
 ## Plan
 
 - Read the Spec
@@ -37,6 +39,12 @@ id: <grahamsspiers@gmail.com> ffrbCqDWn7ARkZ9pR26Frg
 
     $curl -X POST https://31pwr5t6ij.execute-api.eu-west-2.amazonaws.com/explore -H "Content-Type: application/json" -d '{"id":"grahamsspiers@gmail.com ffrbCqDWn7ARkZ9pR26Frg", "plans":[0, 0, 0]}'
     {"results":[[0,0],[0,0],[0,0]],"queryCount":4}
+
+    $curl -X POST https://31pwr5t6ij.execute-api.eu-west-2.amazonaws.com/explore -H "Content-Type: application/json" -d '{"id":"grahamsspiers@gmail.com ffrbCqDWn7ARkZ9pR26Frg", "plans":["00", "10", "20", "30", "40", "50"]}'
+    {"results":[[0,0,0],[0,0,0],[0,1,2],[0,2,2],[0,0,0],[0,2,2]],"queryCount":11}
+
+    $curl -X POST https://31pwr5t6ij.execute-api.eu-west-2.amazonaws.com/explore -H "Content-Type: application/json" -d '{"id":"grahamsspiers@gmail.com ffrbCqDWn7ARkZ9pR26Frg", "plans":[""]}'
+    {"results":[[0]],"queryCount":13}
     ```
 
 Note that the above `plans` is 3 plans of length 1.  There are 3 results.
@@ -46,7 +54,12 @@ Note that the above `plans` is 3 plans of length 1.  There are 3 results.
 - What do we need?
         Expand this plan.
 - Write the module and tests
+  - Create a builder for test maps.
 - Implement best strategy
+  - Solve test maps using brute force.
+  - Implement POST commands.
+  - Create executable (map puzzleName).
+  - Solve puzzles.
 
 ## Strategies
 

@@ -1,6 +1,10 @@
 package aedificium
 
-import "testing"
+import (
+	"fmt"
+	"strings"
+	"testing"
+)
 
 func TestMakeLibMap(t *testing.T) {
 	for size := 1; size <= 4; size++ {
@@ -56,6 +60,32 @@ func TestMakeLibMap(t *testing.T) {
 					t.Errorf("size %d bad connection %d,%d -> %v -> %v", size, room, door, node1, node0)
 				}
 			}
+		}
+		if size > 1 {
+			plan := strings.Repeat("1", size)
+			result := lib.Explore(plan)
+			if len(result) != size+1 {
+				t.Errorf("size %d explore %s failed got %v", size, plan, result)
+			}
+		}
+	}
+}
+
+func TestSolver(t *testing.T) {
+	for size := 1; size <= 4; size++ {
+		lib := MakeLibMap(size)
+		server := NewXServer(lib)
+		testName := fmt.Sprintf("test%d", size)
+		solver := NewSolver(server, testName, size)
+		solved, queryCount, err := solver.Solve()
+		if err != nil {
+			t.Fatalf("%s solver.Solve() returned error: %v", testName, err)
+		}
+		if queryCount <= 0 {
+			t.Errorf("%s bad query count %d", testName, queryCount)
+		}
+		if !solved {
+			t.Fatalf("%s solver.Solve() failed", testName)
 		}
 	}
 }
